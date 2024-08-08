@@ -1,0 +1,17 @@
+﻿<link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+
+<div class="login-container">
+    <header>
+            C H A T A P P
+    </header>
+    <form asp-controller="Account" asp-action="Login" class="login-form">
+        <input type="text" name="username" placeholder="Username" />
+        <input type="password" name="password" placeholder="Password" />
+        <button class="login-button" type="submit">Login</button>
+        <span>Don't have an account?
+            <a asp-controller="Account" asp-action="Register" class="login-link">
+                Register
+            </a>
+        </span>
+    </form>
+</div>

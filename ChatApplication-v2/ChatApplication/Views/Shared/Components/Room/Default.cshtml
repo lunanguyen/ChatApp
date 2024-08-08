@@ -1,0 +1,15 @@
+﻿@model IEnumerable<Chat>
+<link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
+
+<div class="side-menu">
+    @foreach(var chat in Model)
+    {
+        <a class="nav-item" asp-controller="Home" asp-action="Chat" asp-route-id="@chat.Id">
+            @chat.Name
+        </a>
+    }
+
+    <div class="nav-item" id="create-room-btn">
+        <strong>+</strong>
+    </div>
+</div>

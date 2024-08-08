@@ -1,0 +1,33 @@
+﻿.side-menu {
+    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    min-width: 100px;
+    max-width: 100px;
+    z-index: 50;
+    box-shadow: 1px 0 2px 0 black;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-item {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0.75rem 1rem 0;
+    height: 68px;
+    border-radius: 5px;
+    background-color: rgba(255,255,255,0.25);
+    text-align: center;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
+.nav-item > strong {
+    font-size: 36px;
+}

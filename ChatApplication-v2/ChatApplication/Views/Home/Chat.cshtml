@@ -1,0 +1,181 @@
+﻿@using System.Security.Claims
+@model Chat
+
+<link rel="stylesheet" href="~/css/message.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/chat.css" asp-append-version="true" />
+
+@{
+    var userId = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+    var currentUser = Model.Users.FirstOrDefault(x => x.UserId == userId).User.UserName;
+}
+
+<div class="top-row px-4">
+    @if(Model.Type == ChatType.Private)
+    {
+        <header>@Model.Users.FirstOrDefault(x => x.UserId != userId).User.UserName</header>
+    }
+    else
+    {
+        <header>@Model.Name</header>
+        <button class="leave-room-button" onclick="leaveRoomHome()">Leave Room</button>
+    }
+</div>
+<div class="chat-body">
+    @foreach (var message in Model.Messages)
+    {
+        <div class="message @(currentUser == message.Name ? "align-items-end" : "")">
+            <div class="message-container @(currentUser == message.Name ? "align-items-end" : "")">
+                <div class="card shadow @(currentUser == message.Name ? "purple-background" : "")">
+                    @if (Model.Type == ChatType.Room)
+                    {
+                        @if (currentUser != message.Name)
+                        {
+                            <header class="card-header">
+                                @message.Name
+                            </header>
+                        }
+                    }
+                    <p class="card-body">@message.Text</p>
+                </div>
+                <span class="timestamp">
+                    @message.Timestamp
+                </span>
+            </div>
+        </div>
+    }
+</div>
+
+<form class="chat-input" onsubmit="sendMessage(event)">
+    <input type="hidden" name="chatId" value="@Model.Id"/>
+    <input type="hidden" name="roomName" value="@Model.Name" />
+    <input type="text" name="message" id="message-input"/>
+    <button type="submit">Send</button>
+</form>
+
+@section scripts {
+    
+    <script src="~/js/signalr.js"></script>
+    <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
+
+    <script>
+        var connection = new signalR.HubConnectionBuilder()
+                                    .withUrl("/chatHub")
+                                    .build();
+
+        var _connectionId = '';
+
+        connection.on("ReceiveMessage", function (data) {
+            var message = document.createElement("div")
+            message.classList.add('message')
+            
+            if('@currentUser' == data.name) {
+                message.classList.add('align-items-end')
+            }
+
+            var container = document.createElement("div")
+            container.classList.add('message-container')
+            if ('@currentUser' == data.name) {
+                container.classList.add('align-items-end')
+            }
+
+            var card = document.createElement("div")
+            card.classList.add('card')
+            card.classList.add('shadow')
+            if ('@currentUser' == data.name) {
+                card.classList.add('purple-background')
+            }
+
+            if ('@Model.Type' == '@ChatType.Room') {
+                if ('@currentUser' != data.name) {
+                    var header = document.createElement("header")
+                    header.classList.add('card-header')
+                    header.appendChild(document.createTextNode(data.name))
+                    card.appendChild(header)
+                }
+            }
+
+            var p = document.createElement("p")
+            p.classList.add('card-body')
+            p.appendChild(document.createTextNode(data.text))
+
+            var span = document.createElement("span")
+            span.classList.add('timestamp')
+            span.appendChild(document.createTextNode(data.timestamp))
+
+            card.appendChild(p)
+            
+            container.appendChild(card)
+            container.appendChild(span)
+
+            message.appendChild(container)
+
+            var body = document.querySelector('.chat-body')
+            body.appendChild(message);
+
+        })
+
+        var joinRoom = function () {
+            var url = '/Chat/JoinRoom/' + _connectionId + '/@Model.Name'
+            axios.post(url, null)
+                .then(res => {
+                    console.log("Room Joined!", res)
+                })
+                .catch(err => {
+                    console.log("Failed to Join Room!", err)
+                })
+        }
+
+        var leaveRoom = function () {
+            var url = '/Chat/LeaveRoom/' + _connectionId + '/@Model.Name'
+            axios.post(url, null)
+                .then(res => {
+                    console.log("Leave Room!", res)
+                })
+                .catch(err => {
+                    console.log("Failed to Leave Room!", err)
+                })
+        }
+
+        connection.start()
+            .then(function () {
+                connection.invoke('getConnectionId')
+                    .then(function (connectionId) {
+                        _connectionId = connectionId
+                        joinRoom();
+                    })
+            })
+            .catch(function (err) {
+                console.log(err)
+            })
+
+        var sendMessage = async function (event) {
+            event.preventDefault();
+            var data = new FormData(event.target);
+
+            try {
+                await connection.invoke("sendMessage", data.get("chatId"), data.get("message"));
+            } catch (err) {
+                console.error(err);
+            }
+            document.getElementById('message-input').value = '';
+            console.log(event);
+        }
+
+        var leaveRoomHome = async function () {
+            try {
+                leaveRoom();
+                var url = '/Home/LeaveRoom' + '/@Model.Id'
+                axios.post(url, null)
+                    .then(res => {
+                        console.log("Leaved Room!", res)
+                        window.location.href = '/Home/Index';
+                    })
+                    .catch(err => {
+                        console.log("Failed to Leave Room!", err)
+                    })
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+}
